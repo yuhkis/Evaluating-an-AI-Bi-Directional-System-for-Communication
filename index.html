@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI双方向通信システムの評価</title>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #1e1e1e;
+        }
+
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            display: none;
+            padding: 20px;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #ffffff;
+            position: relative;
+            overflow: auto;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            animation: slideIn 0.5s ease-out;
+            padding-top: 30px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .slide h1 {
+            font-size: 3.2em;
+            color: #00d4ff;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .slide h2 {
+            font-size: 2.3em;
+            color: #00a8ff;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .content {
+            font-size: 1.3em;
+            line-height: 1.6;
+            max-width: 95%;
+            margin: 0 auto;
+        }
+
+        .highlight {
+            color: #00ff88;
+            font-weight: bold;
+            background: rgba(0, 255, 136, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .result-box {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #00d4ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,212,255,0.2);
+            animation: fadeIn 1s ease-out 0.5s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .stats {
+            font-size: 1.8em;
+            color: #00ff88;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(0,255,136,0.5);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 1.1em;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            color: #ffffff;
+        }
+
+        th {
+            background: rgba(0,212,255,0.3);
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #00a8ff 0%, #0078ff 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 168, 255, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 168, 255, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .slide-number {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            font-size: 1.2em;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .authors {
+            font-size: 1.1em;
+            color: rgba(255,255,255,0.7);
+            margin-top: 20px;
+        }
+
+        .authors a:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            margin: 12px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        ul li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #00d4ff;
+            font-size: 1.2em;
+        }
+
+        .architecture-img {
+            max-width: 80%;
+            margin: 20px auto;
+            display: block;
+            border: 2px solid #00d4ff;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .emphasis {
+            font-size: 1.2em;
+            color: #00ff88;
+            text-align: center;
+            margin: 20px 0;
+            padding: 18px;
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            background: rgba(0,255,136,0.05);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        .tech-detail {
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 4px solid #00a8ff;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00ff88 0%, #00d4ff 100%);
+            transition: width 0.3s ease;
+            z-index: 1001;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- スライド1: タイトル -->
+    <div class="slide active">
+        <div class="slide-number">1/10</div>
+        <h1>聴覚障害者と健聴者間のAI双方向通信システムの評価</h1>
+        <h2>パイロットケーススタディ</h2>
+        <div class="authors">
+            Zhiwei Yu, Nicholas Wilkins, Yamillet Payano, Nikolas Kelly<br>
+            Sign-Speak, Rochester, NY, USA<br>
+            CHI EA '25, Yokohama, Japan<br><br>
+            <a href="https://sign-speak.com/" target="_blank" style="color: #00d4ff; text-decoration: none; font-size: 1.2em; border: 2px solid #00d4ff; padding: 8px 16px; border-radius: 20px; transition: all 0.3s ease;">
+                🌐 sign-speak.com
+            </a>
+        </div>
+        <div style="position: absolute; bottom: 20px; right: 20px; font-size: 0.85em; color: rgba(255,255,255,0.6); text-align: right;">
+            <strong>スライド作成者:</strong><br>
+            Yuhki Shiraishi, Ph.D.<br>
+            Tsukuba University of Technology, Japan<br>
+            <a href="https://www.shiraishi-lab.org/" target="_blank" style="color: #00d4ff; text-decoration: none;">shiraishi-lab.org</a> | 
+            <a href="https://x.com/yuhkis" target="_blank" style="color: #00d4ff; text-decoration: none;">@yuhkis</a>
+        </div>
+    </div>
+
+    <!-- スライド2: 背景と問題提起 -->
+    <div class="slide">
+        <div class="slide-number">2/10</div>
+        <h2>背景：D/HHコミュニティの課題</h2>
+        <div class="content">
+            <div class="result-box">
+                <ul>
+                    <li><span class="highlight">4800万人</span>（米国）/ <span class="highlight">4.66億人</span>（世界）のD/HH個人</li>
+                    <li>ASL話者：約900万人 vs 認定通訳者：<span class="highlight">1万人のみ</span></li>
+                    <li>高校卒業時の読解力：20%が小学2年生レベル以下</li>
+                </ul>
+                <div style="margin-top: 15px; font-size: 0.8em; color: rgba(255,255,255,0.6); border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px;">
+                    <strong>出典：</strong><br>
+                    • <a href="https://www.researchondisability.org/annual-disability-statistics-collection/build-your-own-statistics-state-national-level-statistics" target="_blank" style="color: #00d4ff; text-decoration: none;">Research on Disability Statistics</a><br>
+                    • <a href="https://www.who.int/news-room/fact-sheets/detail/deafness-and-hearing-loss" target="_blank" style="color: #00d4ff; text-decoration: none;">WHO Fact Sheet on Deafness</a><br>
+                    • <a href="https://pubmed.ncbi.nlm.nih.gov/36423340/" target="_blank" style="color: #00d4ff; text-decoration: none;">PubMed #36423340</a><br>
+                    • <a href="https://deafservicesunlimited.com/asl-interpreter-shortage-and-accessibility-in-higher-education/" target="_blank" style="color: #00d4ff; text-decoration: none;">Deaf Services Unlimited</a><br>
+                    • <a href="https://pubmed.ncbi.nlm.nih.gov/26012168/" target="_blank" style="color: #00d4ff; text-decoration: none;">PubMed #26012168</a>
+                </div>
+            </div>
+            <div class="result-box">
+                <h3>社会的格差</h3>
+                <ul>
+                    <li>雇用格差：<span class="highlight">16%</span>（54% vs 70%）</li>
+                    <li>教育格差：<span class="highlight">15%</span>（18% vs 33%の学士号取得率）</li>
+                    <li>労働参加率：<span class="highlight">22.1%</span>の格差</li>
+                </ul>
+                <div style="margin-top: 15px; font-size: 0.85em; color: rgba(255,255,255,0.6); border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px;">
+                    <strong>出典：</strong> Institute of Education Sciences (IES)<br>
+                    <a href="https://ies.ed.gov/use-work/awards/special-education-research-and-development-center-reading-instruction-deaf-and-hard-hearing-students?ID=1325" 
+                       target="_blank" style="color: #00d4ff; text-decoration: none;">
+                        Special Education Research & Development Center
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- スライド3: 研究目的とシステム概要 -->
+    <div class="slide">
+        <div class="slide-number">3/10</div>
+        <h2>研究目的とアプローチ</h2>
+        <div class="content">
+            <div class="emphasis">
+                AI駆動の双方向通信システムによるコミュニケーションギャップの解消
+            </div>
+            <div class="two-column">
+                <div class="result-box">
+                    <h3>Sign Language Recognition (SLR)</h3>
+                    <ul>
+                        <li>手話をカメラで捉えて音声/テキストに変換</li>
+                        <li>非制約・連続的な手話認識</li>
+                        <li>SacreBLEU: <span class="highlight">55.1±6.67</span></li>
+                        <li>vs 人間通訳者: <span class="highlight">27.6±5.26</span></li>
+                    </ul>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: rgba(255,255,255,0.8);">
+                        <strong>高精度の理由:</strong><br>
+                        • カスケード型モデルによる段階的処理<br>
+                        • 言語学的音素情報の活用<br>
+                        • 条件付き確率場（CRF）による平滑化<br>
+                        <span style="font-size: 0.85em; color: rgba(255,255,255,0.6); margin-top: 5px; display: block;">
+                        ※人間通訳者のBLEUスコアは参考値として測定され、実際より低く見積もられる可能性
+                        </span>
+                    </div>
+                </div>
+                <div class="result-box">
+                    <h3>Sign Language Production (SLP)</h3>
+                    <ul>
+                        <li>音声言語を視覚的手話出力に変換</li>
+                        <li>人間らしいアバターによる表現</li>
+                        <li>精度: <span class="highlight">78%±1.7%</span></li>
+                        <li>vs 人間通訳者: <span class="highlight">72.7%</span></li>
+                    </ul>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: rgba(255,255,255,0.8);">
+                        <strong>高精度の理由:</strong><br>
+                        • GANベースの人間らしいアバター生成<br>
+                        • グロス＋言語特徴の同時変換<br>
+                        • リアルタイム性能を重視した設計
+                    </div>
+                    <div style="margin-top: 10px; font-size: 0.75em; color: rgba(255,255,255,0.6); border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px;">
+                        <strong>出典：</strong> <a href="https://pubmed.ncbi.nlm.nih.gov/28855844/" target="_blank" style="color: #00d4ff; text-decoration: none;">PubMed #28855844</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- スライド4: システムアーキテクチャ -->
+    <div class="slide">
+        <div class="slide-number">4/10</div>
+        <h2>システムアーキテクチャ</h2>
+        <div class="content">
+            <div style="text-align: center; margin: 30px 0;">
+                <svg width="600" height="200" viewBox="0 0 600 200"
+                    style="border: 2px solid #00d4ff; border-radius: 10px; background: rgba(255,255,255,0.05);">
+                    <!-- Deaf Individuals Circle -->
+                    <circle cx="100" cy="100" r="60" fill="none" stroke="#00ff88" stroke-width="3" />
+                    <text x="100" y="90" text-anchor="middle" fill="#ffffff" font-size="14"
+                        font-weight="bold">Deaf</text>
+                    <text x="100" y="110" text-anchor="middle" fill="#ffffff" font-size="14"
+                        font-weight="bold">Individuals</text>
+
+                    <!-- Hearing Individuals Circle -->
+                    <circle cx="500" cy="100" r="60" fill="none" stroke="#00ff88" stroke-width="3" />
+                    <text x="500" y="90" text-anchor="middle" fill="#ffffff" font-size="14"
+                        font-weight="bold">Hearing</text>
+                    <text x="500" y="110" text-anchor="middle" fill="#ffffff" font-size="14"
+                        font-weight="bold">Individuals</text>
+
+                    <!-- SLR Arrow -->
+                    <path d="M 170 80 L 430 80" stroke="#00d4ff" stroke-width="3" fill="none"
+                        marker-end="url(#arrowhead)" />
+                    <text x="300" y="70" text-anchor="middle" fill="#00d4ff" font-size="12" font-weight="bold">Sign
+                        Language Recognition (SLR)</text>
+
+                    <!-- SLP Arrow -->
+                    <path d="M 430 120 L 170 120" stroke="#00a8ff" stroke-width="3" fill="none"
+                        marker-end="url(#arrowhead2)" />
+                    <text x="300" y="140" text-anchor="middle" fill="#00a8ff" font-size="12" font-weight="bold">Sign
+                        Language Production (SLP)</text>
+
+                    <!-- Arrow markers -->
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#00d4ff" />
+                        </marker>
+                        <marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#00a8ff" />
+                        </marker>
+                    </defs>
+                </svg>
+                <p style="font-size: 1.1em; color: #cccccc; margin-top: 10px;">Figure 1: 双方向システムアーキテクチャの概要</p>
+            </div>
+            <div class="tech-detail">
+                <strong>SLRパイプライン：</strong><br>
+                1. 手話境界検出モデル: s_ζ: X → [0,1]*<br>
+                2. 独立手話認識モデル: r_η: X × A → L × G<br>
+                3. 条件付き確率場（CRF）で平滑化<br>
+                4. Transformerによる英語翻訳<br>
+                <span style="font-size: 0.85em; color: rgba(255,255,255,0.7);">
+                X: 低次元データ表現, A: 注意マップ, L: 言語学的情報, G: グロス, E: 英語
+                </span>
+            </div>
+            <div class="tech-detail">
+                <strong>SLPパイプライン：</strong><br>
+                1. テキスト→グロス・言語特徴変換: f_φ: E → G × L<br>
+                2. ポーズ生成: g_ψ: G × L → X<br>
+                3. GAN基盤のフレーム生成（リアルタイム性重視）<br>
+                <span style="font-size: 0.85em; color: rgba(255,255,255,0.7);">
+                E: 英語テキスト, G: グロス（手話単語）, L: 言語学的特徴, X: ポーズデータ
+                </span>
+            </div>
+            <div class="stats">
+                人間通訳者の精度を上回る性能を達成
+            </div>
+        </div>
+    </div>
+
+    <!-- スライド5: 実験設計 -->
+    <div class="slide">
+        <div class="slide-number">5/10</div>
+        <h2>ユーザビリティテストの設計</h2>
+        <div class="content">
+            <div style="text-align: center; margin: 30px 0;">
+                <img src="figure2.png" alt="Figure 2: Interface Design Overview"
+                    style="max-width: 80%; border: 2px solid #00d4ff; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <p style="color: #cccccc; font-size: 1.1em; margin-top: 15px;">Figure 2: インターフェース設計の概要</p>
+            </div>
+            <div class="two-column">
+                <div class="result-box">
+                    <h3>テスト1：システム比較</h3>
+                    <ul>
+                        <li><strong>Zero-way:</strong> テキストベース通信</li>
+                        <li><strong>One-way:</strong> SLPのみ（片方向）</li>
+                        <li><strong>Bi-directional:</strong> SLR+SLP（双方向）</li>
+                        <li>各システムで5-8分間のランダムトピック会話</li>
+                        <li>聴者との実際のコミュニケーション評価</li>
+                        <li><strong>順序効果を考慮したランダム順でテスト</strong></li>
+                    </ul>
+                    <p>参加者：18名のD/HH個人</p>
+                </div>
+                <div class="result-box">
+                    <h3>テスト2：アバター比較</h3>
+                    <ul>
+                        <li>カートゥーンアバター vs 人間らしいアバター</li>
+                        <li><strong>4つの6段階リッカート尺度</strong>で評価：</li>
+                        <li style="font-size: 0.95em; margin-left: 15px;">• 理解しやすさ（comprehensibility）<br>• 理解度（understandability）<br>• その他の品質項目2つ</li>
+                        <li>長文（約4文）・短文（1文）各10個のデータセットから<br>ランダム選択し、2つのアバターで動画化</li>
+                        <li><strong>順序効果軽減のため参加者ごとにランダム提示</strong></li>
+                    </ul>
+                    <p>参加者：48名のD/HH個人</p>
+                </div>
+            </div>
+            <div class="tech-detail">
+                評価方法：System Usability Scale (SUS)ベースの質問票 + 定性的フィードバック
+            </div>
+        </div>
+    </div>
+
+    <!-- スライド6: 主要結果1 -->
+    <div class="slide">
+        <div class="slide-number">6/10</div>
+        <h2>結果1：システム選好性</h2>
+        <div class="content">
+            <div class="tech-detail">
+                <strong>統計的手法：</strong>ペアワイズ一元配置二項検定<br>
+                <strong>選好率：</strong>参加者のランキング評価から算出<br>
+                <strong>注意：</strong>多重比較補正は未実施の可能性
+            </div>
+            <table>
+                <tr>
+                    <th>比較</th>
+                    <th>選好率</th>
+                    <th>p値</th>
+                    <th>結果</th>
+                </tr>
+                <tr>
+                    <td>双方向 > Zero-way</td>
+                    <td><span class="highlight">78%</span></td>
+                    <td class="highlight">p = 0.02</td>
+                    <td>有意に選好</td>
+                </tr>
+                <tr>
+                    <td>双方向 > One-way</td>
+                    <td><span class="highlight">高選好</span></td>
+                    <td class="highlight">p < 0.01</td>
+                    <td>有意に選好</td>
+                </tr>
+                <tr>
+                    <td>One-way > Zero-way</td>
+                    <td>差なし</td>
+                    <td>p = 0.88</td>
+                    <td>有意差なし</td>
+                </tr>
+            </table>
+            <div class="emphasis">
+                78%のユーザーが双方向システムを選好<br>
+                双方向またはOne-wayシステムを88%が選好<br>
+                片方向のみでは不十分
+            </div>
+        </div>
+    </div>
+
+    <!-- スライド7: 主要結果2 -->
+    <div class="slide">
+        <div class="slide-number">7/10</div>
+        <h2>結果2：アバター選好性とユーザビリティ評価</h2>
+        <div class="content">
+            <div style="text-align: center; margin: 15px 0;">
+                <img src="figure3.png" alt="Figure 3: Avatar Comparison"
+                    style="max-width: 70%; border: 2px solid #00d4ff; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                <p style="font-size: 1.0em; color: #cccccc; margin-top: 15px;">Figure 3: アバタースタイルのデモンストレーション：(a) カートゥーン、(b) 人間<br>
+                人間の(b)は同意を得て非実在人物との顔交換を行ったもの</p>
+            </div>
+            <div class="result-box">
+                <h3>アバタータイプの比較</h3>
+                <p>人間らしいアバターが<span class="highlight">統計的に有意に選好された</span>（p < 0.01）</p>
+                <div style="font-size: 0.9em; color: rgba(255,255,255,0.7); margin-top: 10px;">
+                    <strong>統計的手法：</strong>二項検定（各参加者が1つのアバターを選択）<br>
+                    <strong>注：</strong>具体的な選好率（％）は論文中に明記されていない
+                </div>
+            </div>
+            <div class="result-box">
+                <h3>双方向システムの評価（10点満点）</h3>
+                <ul>
+                    <li>学習の容易さ：<span class="highlight">8.83±1.83</span></li>
+                    <li>コミュニケーションニーズの充足：<span class="highlight">8.61±1.77</span></li>
+                    <li>使用意欲：<span class="highlight">8.33±2.47</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- スライド8: 技術的貢献 -->
+    <div class="slide">
+        <div class="slide-number">8/10</div>
+        <h2>技術的貢献と新規性</h2>
+        <div class="content">
+            <div class="two-column">
+                <div class="result-box">
+                    <h3>SLRの革新</h3>
+                    <ul>
+                        <li>カスケード型モデルによる帰納的バイアス導入</li>
+                        <li>言語学的音素情報の活用</li>
+                        <li>非制約・連続手話認識の実現</li>
+                    </ul>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: rgba(255,255,255,0.7);">
+                        <strong>従来の課題：</strong><br>
+                        • 語彙サイズ限定（100語未満）や孤立手話認識のみ<br>
+                        • 連続手話認識でBLEUスコア10未満の低精度<br>
+                        • 実世界でのD/HH話者によるテスト不足
+                    </div>
+                </div>
+                <div class="result-box">
+                    <h3>SLPの革新</h3>
+                    <ul>
+                        <li>GAN基盤の人間らしいアバター生成</li>
+                        <li>リアルタイム性能の確保</li>
+                        <li>形態素的特徴の保持</li>
+                    </ul>
+                    <div style="margin-top: 10px; font-size: 0.9em; color: rgba(255,255,255,0.7);">
+                        <strong>従来の課題：</strong><br>
+                        • 3Dレンダリング基盤のカートゥーンアバターが主流<br>
+                        • 拡散モデルの反復処理による遅延問題<br>
+                        • 自然な手話の表現力・受容性に課題
+                    </div>
+                </div>
+            </div>
+            <div class="emphasis">
+                初めての実世界環境での双方向システムユーザビリティ検証
+            </div>
+        </div>
+    </div>
+
+    <!-- スライド9: 実用的示唆 -->
+    <div class="slide">
+        <div class="slide-number">9/10</div>
+        <h2>実用的示唆と応用分野</h2>
+        <div class="content">
+            <div class="result-box">
+                <h3>設計ガイドライン</h3>
+                <ul>
+                    <li>双方向性は<span class="highlight">必須要件</span></li>
+                    <li>人間らしいアバターの採用が重要</li>
+                    <li>D/HHコミュニティとの共同設計</li>
+                </ul>
+            </div>
+            <div class="two-column">
+                <div class="result-box">
+                    <h3>応用分野</h3>
+                    <ul>
+                        <li>医療：プライベートな診察</li>
+                        <li>教育：リアルタイム講義通訳</li>
+                        <li>緊急通信：救急対応</li>
+                    </ul>
+                </div>
+                <div class="result-box">
+                    <h3>今後の課題</h3>
+                    <ul>
+                        <li>レイテンシ（現在<5秒）の改善</li>
+                        <li>長期使用での評価</li>
+                        <li>大規模展開への対応</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- スライド10: 結論 -->
+    <div class="slide">
+        <div class="slide-number">10/10</div>
+        <h2>結論</h2>
+        <div class="content">
+            <div class="emphasis">
+                AI駆動の双方向通信システムがD/HHコミュニティの<br>
+                コミュニケーションギャップ解消に有効であることを実証
+            </div>
+            <div class="result-box">
+                <h3>主要な知見</h3>
+                <ul>
+                    <li>双方向通信は片方向やテキストベースより優れている</li>
+                    <li>人間らしいアバターが強く選好される</li>
+                    <li>システムは人間通訳者に匹敵する精度を達成</li>
+                </ul>
+            </div>
+            <div class="result-box">
+                <h3>社会的インパクト</h3>
+                <p>教育・雇用・医療アクセスの格差解消への貢献</p>
+                <p>D/HHコミュニティの自律性向上と社会参加促進</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button id="prevBtn" onclick="changeSlide(-1)">前へ</button>
+        <button id="nextBtn" onclick="changeSlide(1)">次へ</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function showSlide(n) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+
+            // Update progress bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function changeSlide(direction) {
+            showSlide(currentSlide + direction);
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === ' ') {
+                e.preventDefault();
+                changeSlide(1);
+            }
+        });
+
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) changeSlide(1);
+            if (touchEndX > touchStartX + 50) changeSlide(-1);
+        }
+
+        // Initialize
+        showSlide(0);
+    </script>
+</body>
+
+</html>
